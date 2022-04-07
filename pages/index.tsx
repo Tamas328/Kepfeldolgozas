@@ -6,6 +6,7 @@ import Canvas from "./components/Canvas";
 
 const Home: NextPage = () => {
   const [imageUrl, setImageUrl] = useState<string>();
+  const [message, setMessage] = useState<string>();
 
   return (
     <div className={styles.container}>
@@ -23,7 +24,21 @@ const Home: NextPage = () => {
             }
           }}
         />
-        <Canvas imgSrc={imageUrl} />
+        <Canvas imgSrc={imageUrl!} message={message!} />
+        <button
+          onClick={(e) => {
+            setMessage("grayscale");
+          }}
+        >
+          Grayscale
+        </button>
+        <button
+          onClick={(e) => {
+            setMessage("gaussianBlur");
+          }}
+        >
+          Gaussian Blur
+        </button>
       </main>
     </div>
   );
