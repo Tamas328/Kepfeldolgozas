@@ -1,7 +1,18 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+/* eslint-disable react/display-name */
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 import cv from "../../services/cv";
 
-const Canvas = ({ imgSrc, message }: { imgSrc: string; message: string }) => {
+type CanvasProps = {
+  imgSrc: string;
+};
+
+const Canvas = forwardRef((props: CanvasProps, ref) => {
   const [image, setImage] = useState<HTMLImageElement>();
   const [canvasHeight, setCanvasHeight] = useState<number>();
   const [canvasWidth, setCanvasWidth] = useState<number>();
@@ -10,15 +21,41 @@ const Canvas = ({ imgSrc, message }: { imgSrc: string; message: string }) => {
 
   const canvas = useRef(null);
 
+  useImperativeHandle(ref, () => ({
+    async loadOpenCV() {
+      await cv.load();
+      setLoaded(true);
+      console.log("OpenCV loaded!");
+    },
+    async processImage(message: string) {
+      if (canvas && canvas.current && loaded) {
+        const ctx = (canvas.current as HTMLCanvasElement).getContext("2d");
+        const img = ctx?.getImageData(0, 0, canvasWidth!, canvasHeight!);
+        const res = await cv.processImage(message, img);
+        setProcessedImage(res.data.payload);
+        ctx?.putImageData(res.data.payload, 0, 0);
+      }
+    },
+    download() {
+      if (canvas && canvas.current) {
+        var url = (canvas.current as HTMLCanvasElement).toDataURL("image/png");
+        var link = document.createElement("a");
+        link.download = "image.png";
+        link.href = url;
+        link.click();
+      }
+    },
+  }));
+
   useEffect(() => {
     const img = new Image();
-    img.src = imgSrc;
+    img.src = props.imgSrc;
     img.onload = () => {
       setImage(img);
       setCanvasHeight(img.height);
       setCanvasWidth(img.width);
     };
-  }, [imgSrc]);
+  }, [props.imgSrc]);
 
   useEffect(() => {
     if (image && canvas && canvas.current) {
@@ -27,37 +64,17 @@ const Canvas = ({ imgSrc, message }: { imgSrc: string; message: string }) => {
     }
   }, [image, canvas, canvasWidth, canvasHeight]);
 
-  useEffect(() => {
-    if (message) {
-      const loadOpenCV = async () => {
-        await cv.load();
-        setLoaded(true);
-      };
-
-      loadOpenCV();
-    }
-  }, [message]);
-
-  useEffect(() => {
-    if (image && canvas && canvas.current && loaded && message) {
-      const ctx = (canvas.current as HTMLCanvasElement).getContext("2d");
-      const img = ctx?.getImageData(0, 0, canvasWidth!, canvasHeight!);
-
-      (async () => {
-        const res = await cv.processImage(message, img);
-        setProcessedImage(res.data.payload);
-      })();
-    }
-  }, [canvasHeight, canvasWidth, image, loaded, message]);
-
-  useEffect(() => {
-    if (canvas && canvas.current && processedImage) {
-      const ctx = (canvas.current as HTMLCanvasElement).getContext("2d");
-      ctx?.putImageData(processedImage, 0, 0);
-    }
-  }, [processedImage, canvasHeight, canvasWidth, canvas]);
-
-  return <canvas ref={canvas} width={canvasWidth} height={canvasHeight} />;
-};
+  return (
+    <canvas
+      className="m-auto align-middle"
+      ref={canvas}
+      width={canvasWidth}
+      height={canvasHeight}
+      onMouseDown={(e) => {
+        console.log(e);
+      }}
+    />
+  );
+});
 
 export default Canvas;

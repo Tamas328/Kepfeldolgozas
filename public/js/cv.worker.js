@@ -21,11 +21,28 @@ function gaussianBlurring({ msg, payload }) {
   postMessage({ msg, payload: imageDataFromMat(result) });
 }
 
+function medianBlur({ msg, payload }) {
+  let img = cv.matFromImageData(payload);
+  let result = new cv.Mat();
+  cv.medianBlur(img, result, 5);
+
+  postMessage({ msg, payload: imageDataFromMat(result) });
+}
+
 function canny({ msg, payload }) {
   const img = cv.matFromImageData(payload);
   let result = new cv.Mat();
-  cv.cvtColor(img, img, cv.COLOR_BGR2GRAY, 0);
-  cv.Canny(src, result, 50, 100, 3, false);
+  cv.cvtColor(img, img, cv.COLOR_BGR2GRAY);
+  cv.Canny(img, result, 50, 100, 3, false);
+
+  postMessage({ msg, payload: imageDataFromMat(result) });
+}
+
+function equalizeHistogram({ msg, payload }) {
+  let img = cv.matFromImageData(payload);
+  let result = new cv.Mat();
+  cv.cvtColor(img, img, cv.COLOR_RGBA2GRAY, 0);
+  cv.equalizeHist(img, result);
 
   postMessage({ msg, payload: imageDataFromMat(result) });
 }
@@ -98,8 +115,14 @@ self.onmessage = (e) => {
     case "gaussianBlur": {
       return gaussianBlurring(e.data);
     }
+    case "medianBlur": {
+      return medianBlur(e.data);
+    }
     case "canny": {
       return canny(e.data);
+    }
+    case "equalizeHistogram": {
+      return equalizeHistogram(e.data);
     }
     default:
       break;

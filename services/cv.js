@@ -51,13 +51,6 @@ class CV {
   processImage(msg, payload) {
     return this._dispatch({ msg: msg, payload });
   }
-  imageGrayscale(payload) {
-    return this._dispatch({ msg: "imageGrayscale", payload });
-  }
-
-  gaussianBlurring(payload) {
-    return this._dispatch({ msg: "gaussianBlur", payload });
-  }
 }
 
 // Export the same instant everywhere
