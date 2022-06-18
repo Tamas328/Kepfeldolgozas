@@ -1,4 +1,5 @@
 /* eslint-disable react/display-name */
+import { ImageError } from "next/dist/server/image-optimizer";
 import React, {
   useState,
   useEffect,
@@ -14,9 +15,10 @@ type CanvasProps = {
 
 const Canvas = forwardRef((props: CanvasProps, ref) => {
   const [image, setImage] = useState<HTMLImageElement>();
+  const [imageSize, setImageSize] = useState<number>();
+  const [originalImg, setOriginalImg] = useState<string>();
   const [canvasHeight, setCanvasHeight] = useState<number>();
   const [canvasWidth, setCanvasWidth] = useState<number>();
-  const [processedImage, setProcessedImage] = useState<ImageData>();
   const [loaded, setLoaded] = useState(false);
 
   const canvas = useRef(null);
@@ -27,20 +29,60 @@ const Canvas = forwardRef((props: CanvasProps, ref) => {
       setLoaded(true);
       console.log("OpenCV loaded!");
     },
-    async processImage(message: string) {
+    async processImage(message: string, value: any) {
+      if (message == "loadOriginal") {
+        this.loadOriginalImage();
+      }
       if (canvas && canvas.current && loaded) {
         const ctx = (canvas.current as HTMLCanvasElement).getContext("2d");
         const img = ctx?.getImageData(0, 0, canvasWidth!, canvasHeight!);
-        const res = await cv.processImage(message, img);
-        setProcessedImage(res.data.payload);
+        if (message == "resize") {
+          setCanvasWidth(value.resizeWidth);
+          setCanvasHeight(value.resizeHeight);
+        }
+        const res = await cv.processImage(message, img, value);
         ctx?.putImageData(res.data.payload, 0, 0);
       }
     },
-    download() {
+    loadOriginalImage() {
+      const img = new Image();
+      img.src = originalImg!;
+      img.onload = () => {
+        setImage(img);
+        setCanvasHeight(img.height);
+        setCanvasWidth(img.width);
+      };
+    },
+    get imageData() {
+      if (canvas && canvas.current && loaded) {
+        const ctx = (canvas.current as HTMLCanvasElement).getContext("2d");
+        const img = ctx?.getImageData(0, 0, canvasWidth!, canvasHeight!);
+        return img;
+      }
+    },
+    download(name: string, format: string, quality: number) {
       if (canvas && canvas.current) {
-        var url = (canvas.current as HTMLCanvasElement).toDataURL("image/png");
+        var url = "";
+        switch (format) {
+          case "png": {
+            var url = (canvas.current as HTMLCanvasElement).toDataURL(
+              "image/png"
+            );
+            break;
+          }
+          case "jpg": {
+            var nq = quality / 100;
+            console.log(nq);
+            var url = (canvas.current as HTMLCanvasElement).toDataURL(
+              "image/jpeg",
+              nq
+            );
+            break;
+          }
+        }
+
         var link = document.createElement("a");
-        link.download = "image.png";
+        link.download = `${name}.${format}`;
         link.href = url;
         link.click();
       }
@@ -48,6 +90,7 @@ const Canvas = forwardRef((props: CanvasProps, ref) => {
   }));
 
   useEffect(() => {
+    setOriginalImg(props.imgSrc);
     const img = new Image();
     img.src = props.imgSrc;
     img.onload = () => {
@@ -65,15 +108,14 @@ const Canvas = forwardRef((props: CanvasProps, ref) => {
   }, [image, canvas, canvasWidth, canvasHeight]);
 
   return (
-    <canvas
-      className="m-auto align-middle"
-      ref={canvas}
-      width={canvasWidth}
-      height={canvasHeight}
-      onMouseDown={(e) => {
-        console.log(e);
-      }}
-    />
+    <>
+      <canvas
+        className="m-auto align-middle"
+        ref={canvas}
+        width={canvasWidth}
+        height={canvasHeight}
+      />
+    </>
   );
 });
 

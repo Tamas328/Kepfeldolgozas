@@ -6,6 +6,7 @@ class CV {
    */
   _dispatch(event) {
     const { msg } = event;
+
     this._status[msg] = ["loading"];
     this.worker.postMessage(event);
 
@@ -48,8 +49,8 @@ class CV {
    * Thanks to what we have implemented in the _dispatch, this will
    * return a promise with the processed image.
    */
-  processImage(msg, payload) {
-    return this._dispatch({ msg: msg, payload });
+  processImage(msg, payload, value) {
+    return this._dispatch({ msg: msg, payload, value: value });
   }
 }
 
