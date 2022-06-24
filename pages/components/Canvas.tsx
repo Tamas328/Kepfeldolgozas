@@ -1,5 +1,4 @@
 /* eslint-disable react/display-name */
-import { ImageError } from "next/dist/server/image-optimizer";
 import React, {
   useState,
   useEffect,
@@ -15,7 +14,6 @@ type CanvasProps = {
 
 const Canvas = forwardRef((props: CanvasProps, ref) => {
   const [image, setImage] = useState<HTMLImageElement>();
-  const [imageSize, setImageSize] = useState<number>();
   const [originalImg, setOriginalImg] = useState<string>();
   const [canvasHeight, setCanvasHeight] = useState<number>();
   const [canvasWidth, setCanvasWidth] = useState<number>();

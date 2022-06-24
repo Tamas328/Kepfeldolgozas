@@ -6,10 +6,10 @@ import { BsImage } from "react-icons/bs";
 import { BiChevronRight } from "react-icons/bi";
 import { IoCloseOutline } from "react-icons/io5";
 import Histogram from "./components/Histogram";
-import { getImageSize } from "next/dist/server/image-optimizer";
 
 const Home: NextPage = () => {
   const [imageUrl, setImageUrl] = useState<string>();
+  const [imagesList, setImagesList] = useState<File[]>();
   const [quality, setQuality] = useState<number>(100);
   const [imageName, setImageName] = useState<string>();
   const [exportFormat, setExportFormat] = useState<string>("png");
@@ -339,9 +339,23 @@ const Home: NextPage = () => {
                 }}
                 onDrop={async (e) => {
                   e.preventDefault();
+                  var fileList = [];
                   if (e.dataTransfer.files.length) {
+                    for (var i = 0; i < e.dataTransfer.files.length; ++i) {
+                      fileList.push(e.dataTransfer.files[i]);
+                    }
+
+                    setImagesList(fileList);
+
+                    setImageName(e.dataTransfer.files[0].name);
                     setImageUrl(URL.createObjectURL(e.dataTransfer.files[0]));
                     setImageUploaded(true);
+                    const img = new Image();
+                    img.onload = () => {
+                      setImageHeight(img.height);
+                      setImageWidth(img.width);
+                    };
+                    img.src = URL.createObjectURL(e.dataTransfer.files[0]);
                     await canvasRef.current.loadOpenCV();
                   }
                 }}
@@ -360,8 +374,14 @@ const Home: NextPage = () => {
                   id="image-upload"
                   className="file-input"
                   onChange={async (e) => {
+                    var fileList = [];
                     if (e.target.files?.length) {
-                      console.log("Total photos: " + e.target.files.length);
+                      for (var i = 0; i < e.target.files.length; ++i) {
+                        fileList.push(e.target.files[i]);
+                      }
+
+                      setImagesList(fileList);
+
                       setImageName(e.target.files[0].name);
                       setImageUrl(URL.createObjectURL(e.target.files[0]));
                       setImageUploaded(true);
@@ -379,8 +399,48 @@ const Home: NextPage = () => {
               <div className="progress" />
             </div>
           )}
-          <div className={`${imageUploaded ? "" : "hidden"} m-auto`}>
-            <Canvas ref={canvasRef} imgSrc={imageUrl!} />
+          <div className={`${imageUploaded ? "" : "hidden"} w-full`}>
+            <div className={` relative w-full flex flex-wrap bg-sidebar`}>
+              <ul className="navbar-nav flex flex-row pl-0 list-style-none mr-auto">
+                {imagesList?.map((image, index) => (
+                  <li
+                    key={index}
+                    className={`${
+                      imagesList[index].name == imageName
+                        ? "bg-nav-active text-white"
+                        : "text-gray"
+                    } nav-item flex flex-row items-center justify-between gap-x-4 text-sm p-2 cursor-pointer hover:bg-nav-active hover:text-white ease-linear transition-all duration-150`}
+                    onClick={() => {
+                      setImageName(image.name);
+                      setImageUrl(URL.createObjectURL(imagesList[index]));
+
+                      const img = new Image();
+                      img.onload = () => {
+                        setImageHeight(img.height);
+                        setImageWidth(img.width);
+                      };
+                      img.src = URL.createObjectURL(imagesList[index]);
+                    }}
+                  >
+                    <p>{image.name}</p>
+                    <IoCloseOutline
+                      className="text-lg"
+                      onClick={() => {
+                        setImagesList(
+                          imagesList.filter(
+                            (img) => img.name !== imagesList[index].name
+                          )
+                        );
+                        console.log(index);
+                      }}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex h-full">
+              <Canvas ref={canvasRef} imgSrc={imageUrl!} />
+            </div>
           </div>
           <div
             className={`${
@@ -390,8 +450,8 @@ const Home: NextPage = () => {
             {imageWidth} x {imageHeight} px
           </div>
           <div className={`${histogramOpen ? "" : "hidden"}`}>
-            <div className="absolute top-4 right-4 border border-border-color rounded-t-lg">
-              <div className="flex p-2 text-md bg-menu-header rounded-t-lg justify-between items-center">
+            <div className="absolute top-4 right-4">
+              <div className="flex p-2 text-md border-r border-t border-l rounded-t-lg bg-menu-header justify-between items-center">
                 <p className="text-white text-2sm cursor-default">Histogram</p>
                 <IoCloseOutline
                   className="text-xl cursor-pointer text-white"
@@ -401,7 +461,7 @@ const Home: NextPage = () => {
                   }}
                 />
               </div>
-              <div className="bg-white px-2 py-2">
+              <div className="bg-white px-2 py-2 border-x">
                 <div className="flex items-center justify-between text-sm">
                   <p className="cursor-default">Channel</p>
                   <select
@@ -421,10 +481,12 @@ const Home: NextPage = () => {
                   </select>
                 </div>
               </div>
-              <Histogram
-                ref={histogramCanvasRef}
-                imgData={imageUploaded ? canvasRef.current.imageData : null}
-              />
+              <div className="border">
+                <Histogram
+                  ref={histogramCanvasRef}
+                  imgData={imageUploaded ? canvasRef.current.imageData : null}
+                />
+              </div>
             </div>
           </div>
         </div>

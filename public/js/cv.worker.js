@@ -1,9 +1,3 @@
-/**
- * With OpenCV we have to work the images as cv.Mat (matrices),
- * so the first thing we have to do is to transform the
- * ImageData to a type that openCV can recognize.
- */
-
 const _brightness = 0;
 const _contrast = 1.0;
 
@@ -77,7 +71,7 @@ function calculateHistogram({ msg, payload, value }) {
     new cv.Scalar(0, 255, 0),
     new cv.Scalar(0, 0, 255),
   ];
-  let scale = 4;
+  let scale = 4.5;
   let histograms = [
     new cv.Mat.zeros(src.rows, histSize[0] * scale, cv.CV_8UC3),
     new cv.Mat.zeros(src.rows, histSize[0] * scale, cv.CV_8UC3),
@@ -359,12 +353,10 @@ function waitForOpencv(callbackFn, waitTimeMs = 30000, stepTimeMs = 100) {
   }, stepTimeMs);
 }
 
-importScripts("https://docs.opencv.org/3.4.0/opencv.js");
-
 self.onmessage = (e) => {
-  console.log(e.data);
   switch (e.data.msg) {
     case "load": {
+      importScripts("https://docs.opencv.org/3.4.0/opencv.js");
       waitForOpencv(function (success) {
         if (success) postMessage({ msg: e.data.msg });
         else throw new Error("Error on loading OpenCV!");
